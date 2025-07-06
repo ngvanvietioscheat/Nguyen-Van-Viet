@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nhận Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('https://files.catbox.moe/dvjdwz.mp4') center center / cover no-repeat #111;
+      overflow: hidden;
+    }
+    #bgVideo {
+      position: fixed; top: 0; left: 0;
+      min-width: 100%; min-height: 100%;
+      z-index: -1; object-fit: cover;
+      display: none;
+    }
+    .login-popup {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #222; padding: 30px 20px;
+      border-radius: 12px; color: white;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+      text-align: center; width: 90%;
+      max-width: 400px; z-index: 5; display: none;
+    }
+    .login-popup h2 { margin-bottom: 15px; font-size: 24px; }
+    .login-popup input, .login-popup select {
+      padding: 12px; font-size: 16px; width: 100%;
+      margin-bottom: 15px; border-radius: 6px;
+      border: none; outline: none;
+    }
+    .login-popup button {
+      padding: 12px 20px; font-size: 17px;
+      background-color: #ff0000; border: none;
+      color: white; border-radius: 6px;
+      cursor: pointer; transition: background-color 0.3s ease;
+    }
+    .login-popup button:hover { background-color: #cc0000; }
+
+    .gift-container {
+      display: none;
+      position: fixed; top: 0; left: 0;
+      padding: 40px 10px; width: 100%; height: 100%;
+      overflow-y: auto; flex-direction: column;
+      align-items: center; gap: 25px;
+      background-color: rgba(0, 0, 0, 0.85); z-index: 4;
+    }
+    .gift-box {
+      background-color: #1c1c1c; border: 3px solid #ff0000;
+      border-radius: 12px; padding: 20px;
+      width: 90%; max-width: 450px; color: white;
+      box-shadow: 0 0 20px 5px rgba(255, 0, 0, 0.6);
+      text-align: center;
+    }
+    .gift-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+    .gift-image { width: 80px; margin-bottom: 10px; }
+    .gift-desc { font-size: 15px; color: #ccc; margin-bottom: 15px; }
+    .gift-button {
+      padding: 12px 20px; font-size: 17px;
+      background-color: #ff0000; border: none;
+      color: white; border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.1s ease, transform 0.2s;
+    }
+    .gift-button:hover { background-color: #cc0000; transform: scale(1.05); }
+
+    .modal-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      max-width: 400px;
+      border-radius: 8px;
+      overflow: hidden;
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-header, .modal-footer {
+      padding: 10px 15px;
+      background: #f1f1f1;
+    }
+    .modal-title { margin: 0; font-size: 18px; color: #333; }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header .close {
+      background: none; border: none;
+      font-size: 22px; color: #333; cursor: pointer;
+    }
+    .modal-body {
+      padding: 15px;
+      color: #333;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .modal-body p {
+      margin: 8px 0;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .modal-footer button {
+      padding: 8px 16px;
+      background-color: #f1c40f;
+      border: none;
+      border-radius: 4px;
+      color: #000;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .modal-footer button:hover {
+      background-color: #f39c12;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+  <script>
+    function showGiftMessage(itemName) {
+      Swal.fire({
+        icon: 'success',
+        title: 'THÀNH CÔNG !',
+        html: `Bạn đã nhận được <strong>${itemName}</strong> Garena sẽ gửi vào hòm thư bạn trong vòng 24 giờ!`,
+        confirmButtonText: 'Xác nhận',
+        confirmButtonColor: '#d33',
+        background: '#1c1c1c',
+        color: '#fff'
+      });
+    }
+
+    function showGiftContainer() {
+      document.querySelector(".gift-container").style.display = "flex";
+    }
+
+    function closeModalAndShowGifts() {
+      document.getElementById("customModal").style.display = "none";
+      showGiftContainer();
+    }
+
+    function handleLogin() {
+      const playerId = document.getElementById("playerId").value.trim();
+      const napType = document.getElementById("napType").value;
+
+      if (playerId === "") {
+        Swal.fire({ icon: 'warning', title: '⚠️ Error ID FreeFire Game ❗', text: 'Vui lòng nhập ID người chơi!', confirmButtonColor: '#ff0000' });
+        return;
+      }
+
+      if (!/^\d{7,13}$/.test(playerId)) {
+        Swal.fire({ icon: 'error', title: '❌ Lỗi định dạng', text: 'Không tìm được Id Game của bạn hãy nhập đúng ?', confirmButtonColor: '#ff0000' });
+        return;
+      }
+
+      if (!["1", "2", "3"].includes(napType)) {
+        Swal.fire({ icon: 'error', title: '❌ Lỗi đăng nhập', text: 'Vui lòng chọn Facebook, Twitter hoặc Google!', confirmButtonColor: '#ff0000' });
+        return;
+      }
+
+      document.getElementById("loginPopup").style.display = "none";
+      const modal = document.getElementById("customModal");
+      modal.style.display = "flex";
+
+      setTimeout(() => {
+        if (modal.style.display === "flex") {
+          closeModalAndShowGifts();
+        }
+      }, 8000);
+    }
+
+    window.onload = () => {
+      const video = document.getElementById("bgVideo");
+      video.addEventListener("canplay", () => {
+        video.style.display = "block";
+      });
+      document.getElementById("loginPopup").style.display = "block";
+    };
+  </script>
+</head>
+<body>
+
+  <video autoplay muted loop playsinline id="bgVideo">
+    <source src="https://files.catbox.moe/dvjdwz.mp4" type="video/mp4" />
+  </video>
+
+  <div class="login-popup" id="loginPopup">
+    <h2>Login Account FreeFire OB49</h2>
+    <select class="form-control" name="dual" id="napType">
+      <option value="0">Lựa chọn</option>
+      <option value="1">Facebook</option>
+      <option value="2">Twitter</option>
+      <option value="3">Google</option>
+      <option value="4">Phương thức khác</option>
+    </select>
+    <input id="playerId" type="text" placeholder="Enter ID Game Free Fire" inputmode="numeric"
+      minlength="7" maxlength="13" pattern="\d{7,13}" required />
+    <button onclick="handleLogin()">Đăng nhập</button>
+  </div>
+
+  <div class="gift-container">
+    <div class="gift-box">
+      <div class="gift-title">UMP Phong Cách Lv6</div>
+      <img class="gift-image" src="https://i.postimg.cc/DzthkLyV/F8497603-C7-C4-42-BD-BD5-B-C0-C7-B7-F40-C54.png" alt="UMP" />
+      <div class="gift-desc">(x1.200 Huy Hiệu Nâng Cấp)</div>
+      <button class="gift-button" onclick="showGiftMessage('UMP Phong Cách Lv6')">Nhận quà</button>
+    </div>
+    <div class="gift-box">
+      <div class="gift-title">AK Rồng Xanh Lv7</div>
+      <img class="gift-image" src="https://i.postimg.cc/526t4F6N/4-FF9-F8-FA-B57-F-4-BFF-BBE7-2-DD5-B1-D5237-D.png" alt="AK47" />
+      <div class="gift-desc">(x900 Huy Hiệu Nâng Cấp )</div>
+      <button class="gift-button" onclick="showGiftMessage('AK Rồng Xanh Lv7')">Nhận quà</button>
+    </div>
+    <div class="gift-box">
+      <div class="gift-title">XM8 Lôi Thần Lv7</div>
+      <img class="gift-image" src="https://i.postimg.cc/q7hKDvng/7-AFE25-EB-E096-4-ECF-9-FE1-B53-E864-D9-F6-B.png" alt="XM8" />
+      <div class="gift-desc">(x950 Huy Hiệu Nâng Cấp )</div>
+      <button class="gift-button" onclick="showGiftMessage('XM8 Lôi Thần Lv7')">Nhận quà</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="customModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Thông báo</h4>
+        <button type="button" class="close" onclick="closeModalAndShowGifts()">×</button>
+      </div>
+      <div class="modal-body">
+        <p><strong style="color:#e74c3c;">CẢNH BÁO: Cấm mang Html này để làm việc xấu mang tính chất lừa 💵 người khác !! menu chỉ để giải trí yêu cầu không cắp chất xám ‼️</strong></p>
+        <p><strong style="color:#3498db;">"Developer: @ngtuancuongios ( Nguyễn Tuấn Cường )"</strong></p>
+        <p><strong>Liên hệ mua đồ chơi kéo tâm IOS NTC ( nhấn không vào thì nhấn giữ 2 giây nhé! ):
+          <a href="https://www.facebook.com/nguyen.cuong.311892" target="oneclick" style="color:#e74c3c;">nhấn vào đây</a>
+        </strong></p>
+        <p><strong>Cảm ơn bạn đã xài đồ chơi của Cường chúc bạn có 1 ngày luôn vui vẻ 🥳.</strong></p>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeModalAndShowGifts()">Đóng 3 giờ</button>
+        <button onclick="closeModalAndShowGifts()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
